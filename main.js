@@ -107,4 +107,190 @@ canvas.addEventListener("mouseup", (e) => {
 
   switch (modo.value) {
     case "circulo":
-      const raio = M
+      const raio = Math.hypot(largura, altura);
+      ctx.beginPath();
+      ctx.arc(xInicio, yInicio, raio, 0, 2 * Math.PI);
+      preencher.checked ? ctx.fill() : ctx.stroke();
+      break;
+    case "quadrado":
+      preencher.checked ? ctx.fillRect(xInicio, yInicio, largura, altura)
+                        : ctx.strokeRect(xInicio, yInicio, largura, altura);
+      break;
+    case "linha":
+      ctx.beginPath();
+      ctx.moveTo(xInicio, yInicio);
+      ctx.lineTo(xFim, yFim);
+      ctx.stroke();
+      break;
+    case "x":
+      ctx.beginPath();
+      ctx.moveTo(xInicio, yInicio);
+      ctx.lineTo(xFim, yFim);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(xInicio, yFim);
+      ctx.lineTo(xFim, yInicio);
+      ctx.stroke();
+      break;
+  }
+});
+
+limpar.addEventListener("click", () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  historico = [];
+});
+
+desfazer.addEventListener("click", () => {
+  if (historico.length > 1) {
+    historico.pop();
+    ctx.putImageData(historico[historico.length - 1], 0, 0);
+  } else {
+    historico = [];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+});
+
+salvar.addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = "Meu Desenho.png";
+  link.href = canvas.toDataURL();
+  link.click();
+});
+
+// TOUCH EVENTS
+canvas.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  xInicio = touch.clientX - rect.left;
+  yInicio = touch.clientY - rect.top;
+
+  desenhando = true;
+  salvarEstado();
+
+  if (modo.value === "livre" || modo.value === "borracha") {
+    ctx.beginPath();
+    ctx.moveTo(xInicio, yInicio);
+  }
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  e.preventDefault();
+  if (!desenhando) return;
+
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const xAtual = touch.clientX - rect.left;
+  const yAtual = touch.clientY - rect.top;
+
+  if (modo.value === "livre" || modo.value === "borracha") {
+    ctx.strokeStyle = modo.value === "borracha" ? "white" : cor.value;
+    ctx.lineWidth = espessura.value;
+    ctx.lineTo(xAtual, yAtual);
+    ctx.stroke();
+  } else {
+    if (historico.length > 0) {
+      ctx.putImageData(historico[historico.length - 1], 0, 0);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    const largura = xAtual - xInicio;
+    const altura = yAtual - yInicio;
+
+    ctx.strokeStyle = cor.value;
+    ctx.fillStyle = cor.value;
+    ctx.lineWidth = espessura.value;
+
+    switch (modo.value) {
+      case "circulo":
+        const raio = Math.hypot(largura, altura);
+        ctx.beginPath();
+        ctx.arc(xInicio, yInicio, raio, 0, 2 * Math.PI);
+        preencher.checked ? ctx.fill() : ctx.stroke();
+        break;
+      case "quadrado":
+        preencher.checked ? ctx.fillRect(xInicio, yInicio, largura, altura)
+                          : ctx.strokeRect(xInicio, yInicio, largura, altura);
+        break;
+      case "linha":
+        ctx.beginPath();
+        ctx.moveTo(xInicio, yInicio);
+        ctx.lineTo(xAtual, yAtual);
+        ctx.stroke();
+        break;
+      case "x":
+        ctx.beginPath();
+        ctx.moveTo(xInicio, yInicio);
+        ctx.lineTo(xAtual, yAtual);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(xInicio, yAtual);
+        ctx.lineTo(xAtual, yInicio);
+        ctx.stroke();
+        break;
+    }
+  }
+});
+
+canvas.addEventListener("touchend", (e) => {
+  if (!desenhando) return;
+  desenhando = false;
+
+  const rect = canvas.getBoundingClientRect();
+  const touch = e.changedTouches[0];
+  const xFim = touch.clientX - rect.left;
+  const yFim = touch.clientY - rect.top;
+
+  const largura = xFim - xInicio;
+  const altura = yFim - yInicio;
+
+  ctx.strokeStyle = cor.value;
+  ctx.fillStyle = cor.value;
+  ctx.lineWidth = espessura.value;
+
+  if (historico.length > 0) ctx.putImageData(historico[historico.length - 1], 0, 0);
+
+  switch (modo.value) {
+    case "circulo":
+      const raio = Math.hypot(largura, altura);
+      ctx.beginPath();
+      ctx.arc(xInicio, yInicio, raio, 0, 2 * Math.PI);
+      preencher.checked ? ctx.fill() : ctx.stroke();
+      break;
+    case "quadrado":
+      preencher.checked ? ctx.fillRect(xInicio, yInicio, largura, altura)
+                        : ctx.strokeRect(xInicio, yInicio, largura, altura);
+      break;
+    case "linha":
+      ctx.beginPath();
+      ctx.moveTo(xInicio, yInicio);
+      ctx.lineTo(xFim, yFim);
+      ctx.stroke();
+      break;
+    case "x":
+      ctx.beginPath();
+      ctx.moveTo(xInicio, yInicio);
+      ctx.lineTo(xFim, yFim);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(xInicio, yFim);
+      ctx.lineTo(xFim, yInicio);
+      ctx.stroke();
+      break;
+  }
+});
+
+function ajustarCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const backup = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  ctx.putImageData(backup, 0, 0);
+}
+
+ajustarCanvas();
+window.addEventListener("resize", ajustarCanvas);
